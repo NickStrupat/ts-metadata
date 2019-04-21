@@ -1,3 +1,5 @@
+import { addGeneratedMetadata } from './metadata.generated'
+
 export class Metadata {
 	public static get(o: any): TypeInfo {
 		const key: any = o === null ? null : o === undefined ? undefined : Object.getPrototypeOf(o);
@@ -21,7 +23,7 @@ export class Metadata {
 		for (let type of [ Number, String, Boolean, Symbol, Object, Array ])
 			table.set(type.prototype, new TypeInfo(type.prototype.constructor.name));
 
-		// TODO: add the generated metadata
+		addGeneratedMetadata(table);
 		
 		return table;
 	}
