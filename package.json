@@ -1,0 +1,25 @@
+{
+  "name": "ts-metadata",
+  "version": "0.0.1",
+  "description": "Generates metadata for primitives and exported classes, retrievable at runtime even after minifying",
+  "main": "generate.ts",
+  "dependencies": {
+    "ts-morph": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^11.13.6"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NickStrupat/ts-metadata.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NickStrupat/ts-metadata/issues"
+  },
+  "homepage": "https://github.com/NickStrupat/ts-metadata#readme"
+}
