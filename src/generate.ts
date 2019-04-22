@@ -47,7 +47,17 @@ for (let sourceFile of project.getSourceFiles()) {
 		continue;
 
 	const exportedClassNames = exportedClasses.map(x => x.getName()).filter(isString);
-	const modulePath = `./${sourceFile.getBaseNameWithoutExtension()}`;
+	const cwdLength = process.cwd().length;
+	const sourceFilePath = sourceFile.getFilePath();
+	const extension = path.extname(sourceFilePath);
+	const relativePath = sourceFilePath.substr(cwdLength);
+	console.log("=========");
+	console.log(process.cwd());
+	console.log(cwdLength);
+	console.log(sourceFilePath);
+	console.log(extension);
+	console.log(relativePath);
+	const modulePath = `.${sourceFilePath.substring(cwdLength, sourceFilePath.length - extension.length)}`;
 
 	imports.push(new Import(exportedClassNames, modulePath));
 	for (let exportedClass of exportedClasses) {
