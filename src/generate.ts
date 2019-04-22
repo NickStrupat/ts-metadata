@@ -1,11 +1,12 @@
 import { Project, ClassDeclaration } from "ts-morph";
-import { TypeInfo } from './metadata'
+import { TypeInfo } from "./type-info";
 import * as fs from "fs";
 import * as path from "path";
 
 console.log(process.cwd());
 
-// const metadataSourceFilename = 'metadata.ts';
+const metadataSourceFilename = 'metadata.ts';
+const typeInfoSourceFilename = 'type-info.ts';
 const outputSourceFilename = 'metadata.generated.ts';
 
 // copy base metadata file to current working directory
@@ -21,15 +22,14 @@ const project = new Project({
 });
 // project.addExistingSourceFileIfExists('uhoh.ts');
 
-class Import {
+class Module {
 	constructor(
-		public classNames: string[],
-		public modulePath: string,
+		public filePath: string,
+		public typeInfos: Array<TypeInfo>,
 	) {}
 }
 
-const imports = new Array<Import>();
-const typeInfos = new Array<TypeInfo>();
+const modules = new Array<Module>();
 
 function isString(stringOrUndefined: string | undefined): stringOrUndefined is string {
 	return stringOrUndefined !== undefined
@@ -47,19 +47,12 @@ for (let sourceFile of project.getSourceFiles()) {
 		continue;
 
 	const exportedClassNames = exportedClasses.map(x => x.getName()).filter(isString);
-	const cwdLength = process.cwd().length;
 	const sourceFilePath = sourceFile.getFilePath();
 	const extension = path.extname(sourceFilePath);
-	const relativePath = sourceFilePath.substr(cwdLength);
-	console.log("=========");
-	console.log(process.cwd());
-	console.log(cwdLength);
-	console.log(sourceFilePath);
-	console.log(extension);
-	console.log(relativePath);
-	const modulePath = `.${sourceFilePath.substring(cwdLength, sourceFilePath.length - extension.length)}`;
+	const modulePath = `.${sourceFilePath.substring(process.cwd().length, sourceFilePath.length - extension.length)}`;
 
-	imports.push(new Import(exportedClassNames, modulePath));
+	modules.push(new Module(sourceFilePath, exportedClassNames.map(name => new TypeInfo(name))));
+
 	for (let exportedClass of exportedClasses) {
 		const name = exportedClass.getName();
 		if (!isString(name))
@@ -79,24 +72,30 @@ for (let sourceFile of project.getSourceFiles()) {
 		// 		// metadataSourceFile.addStatements(`\tnew PropertyInfo('${parameter.getName()}', ['${parameterTypes}']),`);
 		// 	}
 		// }
-		typeInfos.push(new TypeInfo(name));
+		//typeInfos.push(new TypeInfo(name));
 	}
 }
 
-console.log(imports);
-console.log(typeInfos);
+console.log(modules);
 
-if (imports.length !== 0 && typeInfos.length !== 0) {
+if (modules.length !== 0 && modules.reduce((cur, next) => cur + next.typeInfos.length, 0) !== 0) {
 	const os = fs.createWriteStream(outputSourceFilename);
 	
-	os.write(`import { TypeInfo } from './metadata'\n\n`);
-	for (let import_ of imports) {
-		os.write(`import { ${import_.classNames.join(", ")} } from '${import_.modulePath}';\n`);
+	os.write(`import { TypeInfo } from './type-info'\n\n`);
+	for (let i = 0; i !== modules.length; ++i) {
+		const sourceFilePath = modules[i].filePath;
+		const extension = path.extname(sourceFilePath);
+		const modulePath = `.${sourceFilePath.substring(process.cwd().length, sourceFilePath.length - extension.length)}`;
+		os.write(`import * as module${i + 1} from '${modulePath}';\n`);
 	}
 
 	os.write(`\nexport function addGeneratedMetadata(table: Map<any, TypeInfo>): void {\n`);
-	for (let typeInfo of typeInfos) {
-		os.write(`\ttable.set(${typeInfo.name}.prototype, new TypeInfo("${typeInfo.name}"));\n`);
+	for (let i = 0; i !== modules.length; ++i) {
+		for (let typeInfo of modules[i].typeInfos) {
+			os.write(`\ttable.set(module${i + 1}.${typeInfo.name}.prototype, new TypeInfo("${typeInfo.name}"));\n`);
+		}
 	}
 	os.write(`}`);
+	fs.copyFileSync(path.join(__dirname, metadataSourceFilename), metadataSourceFilename);
+	fs.copyFileSync(path.join(__dirname, typeInfoSourceFilename), typeInfoSourceFilename);
 }

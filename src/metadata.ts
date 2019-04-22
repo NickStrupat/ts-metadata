@@ -1,4 +1,5 @@
 import { addGeneratedMetadata } from './metadata.generated'
+import { TypeInfo } from './type-info';
 
 export class Metadata {
 	public static get(o: any): TypeInfo {
@@ -27,13 +28,4 @@ export class Metadata {
 		
 		return table;
 	}
-}
-
-export class TypeInfo {
-	constructor(
-		public readonly name: string,
-		//public readonly isPrimitive: boolean,
-		//public readonly properties: [],
-		//public readonly functions: [],
-	) {}
 }
